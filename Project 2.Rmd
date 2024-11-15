@@ -1,0 +1,458 @@
+---
+title: "Project 2"
+output: html_document
+date: "2024-11-14"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+tennis_goat_data <- read_csv("SDS 313/Tennis Greatest of All Time Spreadsheet Statistics - Sheet1 (1).csv")
+View(tennis_goat_data)
+
+library(ggplot2)
+library(tibble)
+library(dplyr)
+library(stringr)
+library(knitr)
+
+
+```
+
+# Question 1
+
+The data comes from [Ultimate Tennis
+Statistics](https://ultimatetennisstatistics.com/goatList){.uri}, a
+website that stores updated info on every player currently playing on
+the professional tour and the statistics of those who have played in the
+past. Many of their datasets include rankings, performance, tournaments,
+etc, but I chose the GOAT list because I can visualize all of these
+categories in one dataset that define players holistically. I chose
+tennis statistics because I started playing tennis when I was three
+years old, played throughout middle school, and played for varsity
+throughout high school. Tennis is my ultimate passion and when I grow up
+I aspire to become a data scientist or analyst for the professional
+tennis tour, and I feel this was my first chance to try extracting
+statistics on my favorite players.
+
+![](images/TennisMajors_visuelGOAT.webp)
+
+[Tennis
+GOAT](https://www.tennismajors.com/atp/nadal-federer-or-so-many-who-is-the-goat-after-roland-garros-298312.html)
+
+# Question 2
+
+I imported the data into R by manually scraping the data into a google
+spreadsheet, downloading it as a csv file, and then importing it into
+RStudio with the read.csv function. When I first scraped the data, I had
+to remove duplicate rows that were redundant for the dataset. Before I
+analyzed the data, I had to convert the variables that start with a
+digit into letters in order to make the categories look more
+aesthetically pleasing. For this, I used the rename function on all of
+the functions in the dataset using `rename().`I left the numbers in the
+dataset as is because it was crucial to analyze the amount of points per
+player in order to determine the player who performed the best.
+
+```{r cars, echo = FALSE}
+
+tennis_goat_data <- tennis_goat_data |>
+  rename(
+    rank_points = `Rank P`,
+    tournament_points = `Tourn P`,
+    achievement_points = `Ach P`,
+    number_grand_slams = GS,
+    titles_won = TF,
+    additional_achievements = AF,
+    masters_titles = M,
+    overall_wins = O,
+    major_events_won = BT,
+    titles = `T`,
+    weeks_at_number_one = `W@1`,
+    win_percentage = `W%`,
+    career_peak_elor_rating = Elo
+  )
+
+```
+
+# Question 3
+
+```{r, echo = FALSE}
+subset_table <- tennis_goat_data |>
+  select(
+    Name, 
+    number_grand_slams,
+    weeks_at_number_one, 
+    win_percentage, 
+    rank_points,
+    career_peak_elor_rating,
+    major_events_won
+  )
+
+descriptive_table <- data.frame(
+  Variable = c(
+    "Name",
+    "number_grand_slams",
+    "weeks_at_number_one",
+    "win_percentage",
+    "rank_points",
+    "career_peak_elor_rating",
+    "major_events_won"
+  ),
+  Type = sapply(subset_table, class),
+  Description = c(
+    "Player's name",
+    "Total number of Grand Slam titles won by the player",
+    "Total weeks the player has had the world number one ranking",
+    "Player's overall win percentage",
+    "Total ranking points of the player",
+    "Player highest elor rating",
+    "Amount of Major Events Won"
+  )
+)
+
+kable(descriptive_table, col.names = c("Variable", "Type", "Description"))
+```
+
+# Question 4
+
+### First Univariate Analyses
+
+```{r, echo = FALSE}
+#Univariate histogram to display the frequency of grand slams amongst all the players in the dataset
+ggplot(tennis_goat_data, aes(x = number_grand_slams)) + 
+  geom_histogram(binwidth = 1, fill  = "blue", color = "black") + 
+  labs(title = "Grand Slam Titles Distribution", x = "Number of Grand Slams", y = "Frequency") +
+  theme_minimal()
+
+summary(tennis_goat_data$number_grand_slams)
+```
+
+This data is skewed right with a mean of approximately 1.233, a minimum
+of 0, and a maximum of 24. As shown, most players tend to have 0 -5
+grand slams. After that, the top 1% of players including Rafael Nadal,
+Novak Djokovic, and Roger Federer have attained many grand slams despite
+the odds.
+
+### Second Univariate Analyses
+
+```{r, echo = FALSE}
+#Univariate histogram to display the frequency of weeks at number one amongst all the players in the dataset
+ggplot(tennis_goat_data, aes(x = weeks_at_number_one)) + 
+  geom_histogram(binwidth = 40, fill = "lightgreen", color = "black") + 
+  labs(title = "Distribution of Weeks at Number One", x = "Weeks at Number One", y = "Frequency") +
+  theme_minimal()
+
+summary(tennis_goat_data$weeks_at_number_one)
+```
+
+As displayed in the histogram, a majority of the players in the tennis
+dataset have 0 weeks at number one, and only a select amount have more
+than 0. The data is skewed right, has a mean of 16.09, a minimum of 0,
+and a maximum of 404 according to the summary statistics
+`summary(tennis_goat_data$weeks_at_number_one)`. Novak Djokovic, listed
+as number one on the GOAT rankings according to the dataset, had the
+most amount of weeks and this is largely considered a factor of impact
+on the game.
+
+### Third Univariate Analyses
+
+```{r, echo = FALSE}
+#Univariate histogram to display the frequency of the win percentage amongst all the players in the dataset
+tennis_goat_data$win_percentage <- as.numeric(gsub("%", "", tennis_goat_data$win_percentage))
+
+ggplot(tennis_goat_data, aes(x = win_percentage)) + geom_histogram(binwidth = 10, fill = "orange", color = "black") + 
+  labs(title = "Distribution of Win Percentage", x = "Win Percentage", y = "Frequency") +
+  theme_minimal()
+
+
+summary(tennis_goat_data$win_percentage)
+```
+
+As displayed in the histogram above and the program
+`summary(tennis_goat_data$win_percentage)`, the graph has a mean around
+63, a minimum of 49.20, and 83.80. The players with the highest
+percentages are usually considered the greatest of all time(GOAT),
+because they are achieving the most amount of victories.
+
+### Fourth Univariate Analyses
+
+```{r, echo = FALSE}
+#Univariate histogram to display the frequency of rank amongst all the players in the dataset
+ggplot(tennis_goat_data, aes(x = rank_points)) + 
+  geom_histogram(binwidth = 10, fill = "coral", color = "black") + 
+  labs(title = "Distribution of Rank Points", x = "Rank Points", y = "Frequency") + theme_minimal()
+
+summary(tennis_goat_data$rank_points)
+```
+
+The distribution of rank points which is skewed right display that the
+frequency of players with fewer rank points is very high, specifically
+around the 0-30 range, and there are far fewer players that have a lot
+of rank points (above 100). Through the calculation of
+`summary(tennis_goat_data$rank_points)`, we can see that the mean rank
+points is around 15.
+
+# Question 5
+
+### First Bivariate Analyses
+
+```{r, echo = FALSE}
+#Scatterplot for numerical values of number of grand slams compared to the rank points of the players 
+ggplot(tennis_goat_data, aes(x = number_grand_slams, y = rank_points)) + 
+  geom_point(color = "blue", alpha = 0.7) + 
+  geom_smooth(method = "lm", se = FALSE, color = "red") + 
+  labs(title = "Number of Grand Slams vs Rank Points", 
+       x = "Number of Grand Slams",
+       y = "Rank Points") +
+  theme_minimal()
+
+#Displays the correlation coefficient between the two variables
+cor(tennis_goat_data$number_grand_slams, tennis_goat_data$rank_points)
+```
+
+For this scatterplot displaying the relationship between the number of
+grand slams and total rank points, there is a strong, linear positive
+correlation between the two variables because of a correlation
+coefficient of 0.95.
+`cor(tennis_goat_data$number_grand_slams, tennis_goat_data$rank_points)`
+was the code I used to generate this number. As seen, players with more
+grand slams tend to have higher rank points.
+
+### Second Bivariate Analyses
+
+```{r, echo = FALSE}
+#Scatterplot for numerical values of weeks at number one vs win percentage of the players
+ggplot(tennis_goat_data, aes(x = weeks_at_number_one, y = win_percentage)) + 
+  geom_point(color = "brown", alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Weeks at Number one vs Win Percentage",
+       x = "Weeks at Number One",
+       y = "Win Percentage") +
+  theme_minimal()
+
+#Displays the correlation coefficient between the two variables
+cor(tennis_goat_data$weeks_at_number_one, tennis_goat_data$win_percentage)
+```
+
+This scatterplot displays the relationship between the weeks at number
+one and according win percentage of the players, and there is a
+moderately, positive linear relationship between the variables because
+of a correlation coefficient of 0.615. The
+function`cor(tennis_goat_data$weeks_at_number_one, tennis_goat_data$win_percentage)`
+was utilized to generate this number, and this shows that players who
+were the longest at the number one rank usually have higher win
+percentages.
+
+### Third Bivariate Analyses
+
+```{r, echo = FALSE}
+#Boxplot for Win Percentage by Number of Grand Slams
+ggplot(tennis_goat_data, aes(x = factor(number_grand_slams), y = win_percentage)) + geom_boxplot(fill = "orange", color = "purple") + 
+  labs(title = "Win Percentage by Number of Grand Slams",
+       x = "Number of Grand Slams",
+       y = "Win Percentage") +
+  theme_minimal()
+
+#Displays the summary statistics by group
+aggregate(tennis_goat_data$win_percentage, by = list(tennis_goat_data$number_grand_slams), FUN = median)
+```
+
+This boxplot that displays the relationship between the win percentage
+of the players by number of grand slams shows that players with a higher
+number of slams have higher win percentages. The purple lines indicate
+the median value per group of player grand slams, and the median win
+percentage increases alongside the number of grand slams. There are
+definetely less values towards the peak number of grand slams, and the
+players who are in that range of values are in the GOAT debate. The
+method`aggregate(tennis_goat_data$win_percentage, by = list(tennis_goat_data$number_grand_slams), FUN = median)`
+was used to display the summary median values of all the groups of
+number of grand slams.
+
+### Fourth Bivariate Analyses
+
+```{r, echo = FALSE}
+#Scatterplot for Weeks at Number One
+top_players <- tennis_goat_data |>
+  arrange(desc(career_peak_elor_rating)) |>
+  slice_head(n = 10)
+
+ggplot(top_players, aes(x = reorder(Name, career_peak_elor_rating), y = career_peak_elor_rating)) + 
+  geom_bar(stat = "identity", fill = "blue", color = "brown") + 
+  coord_flip() + 
+  labs(title = "Top 10 Players by Career Peak Elo Rating",
+       x = "Player Name",
+       y = "Career Peak Elo Rating") +
+  theme_minimal()
+
+# Displays the correlation coefficient between the two variables
+player_elo_stats <- tennis_goat_data |>
+  summarise(
+    mean_elo = mean(career_peak_elor_rating),
+    median_elo = median(career_peak_elor_rating),
+    sd_elo = sd(career_peak_elor_rating),
+    min_elo = min(career_peak_elor_rating),
+    max_elo = max(career_peak_elor_rating)
+  )
+knitr::kable(player_elo_stats, 
+             caption = "Summary Statistics for Career Peak Elo Ratings", 
+             format = "markdown", 
+             align = c("c", "c"))
+
+
+```
+
+This barplot displays the top 10 players of all the players by their Elo
+rating, which is essentially tracks a player rating that will increase
+more if they win against higher-rated opponents and less if they win
+against lower-rated opponents.
+
+```{r, echo = FALSE}
+multi_plot <- ggplot(tennis_goat_data, aes(x = weeks_at_number_one, y = major_events_won, color = win_percentage)) +
+  geom_point(size = 2) +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(
+    title = "Relationship between Weeks at Number One, The Major Events Won, and overall Win Percentage",
+    x = "Weeks at Number One",
+    y = "Major Events Won",
+    color = "Win Percentage"
+  ) +
+    theme_minimal()
+  print(multi_plot)
+```
+
+According to the graph, there is a positive correlation between players
+who have spent more weeks at number one and the amount of major events
+they have won like ATP 500's, Master's, and Futures tournaments. Also,
+players with higher win percentagges tend to cluster in the upper right
+area, indicating that a higher dominance at the number one spot usually
+means high win records and achievements.
+
+## Parsing Variable of Interest
+
+```{r, echo = FALSE}
+tennis_goat_data$first_name <- sub(" .*", "", tennis_goat_data$Name)
+
+# View the updated dataset
+head(tennis_goat_data$first_name)
+```
+
+## Create at Least Two New Variables of Interest
+
+### Mentions the category of the winning rate
+
+```{r, echo = FALSE}
+tennis_goat_data <- tennis_goat_data |>
+  mutate(rate_of_winning = case_when(
+    win_percentage >= 0.75 ~ "High Win Rate",
+    win_percentage >= 0.50 & win_percentage < 0.75 ~ "Medium win Rate",
+    win_percentage < 0.50 ~ "Low Win Rate",
+    TRUE ~ "Unknown"
+  ))
+
+head(tennis_goat_data$rate_of_winning)
+```
+
+Here, I coded a new variable called 'rate_of_winning' that categorizes
+each player into a high win rate, a medium win rate, and a low win rate
+by their overall win percentage. Displayed above are the first few
+values of the top few players.
+
+### Adds up all points per player
+
+```{r, echo = FALSE}
+tennis_goat_data <- tennis_goat_data |> 
+  mutate(total_achievement_score = rank_points + achievement_points + tournament_points)
+
+# Shows the first few lines of the new variable created
+head(tennis_goat_data$total_achievement_score)
+
+
+
+```
+
+Here, I coded a new variable of interest by adding up all the points
+categories including rank points, achievement points, and tournament
+points. Displayed above are the first few values of the first few top
+players. Clearly, the points are displayed in decreasing order.
+
+# Question 6
+
+[Vinay's Github Project 2
+Repository](https://github.com/vinaenae/Project-2.git){.uri} - Here is
+my private github repository. The files it comprises of include the
+Project 2 RMD file, the report that is knit in HTML, and the csv file
+that contains the entire tennis GOAT dataset.
+
+# Question 7
+
+There are various elements out of the list provided that I decided to
+utilize, and they all helped in making my report of the tennis GOAT
+dataset look aeshetically pleasing. For part C, I reshaped the dataset
+variable 'Name' to the top 10 players in order to capture the main
+essence of the project: greatest tennis players of all time. I filtered
+using arrange and utilized the slice function in the last barplot from
+question 5 that depicted the Top 10 Players by Career Peak Elo Rating.
+In addition to, for part A, I used 5 in-line codes within my report, and
+they are scattered throughout my code or graph descriptions from
+questions 4 and 5. Also, I did Part I by creating a multivariate plot of
+the variables weeks at number one, major events won, and win percentage.
+For Part G, I parsed the strings of the player names and retrieved only
+the first names of the players into a new variable. For Part D, I
+created two new variables of interests - one that mentions the category
+of the player winning rate and another that adds up all the points per
+player.
+
+# Question 8
+
+In the analysis of the tennis GOAT data, I explored the relationships
+among key variables including the number of grand slams, weeks
+atlibrary(readr)
+Tennis_Greatest_of_All_Time_Spreadsheet_Statistics_Sheet1_1\_ \<-
+read_csv("SDS 313/Tennis Greatest of All Time Spreadsheet Statistics -
+Sheet1 (1).csv")
+View(Tennis_Greatest_of_All_Time_Spreadsheet_Statistics_Sheet1_1\_)
+number one, win percentage, rank points, and career peak Elo rating.
+Overall, I found that players with more grand slams had higher winniung
+percentages, and this makes sense since winning major tournaments
+correlates with strong, consistent performance. Also, there was a clear,
+positive relationship between weeks at number one and the number of
+major events won, showcasing that players who spend more time as the
+world's top-ranked player tends to have more high value achievements.
+The data also displayed information about a player's Elo rating, a point
+system that determines their overall ranking in the long run. The trend
+amongst all the graphs show that the higher the independent variable,
+the more the dependent variable or the measure of success on the GOAT
+ranks. Similarly, as someone who was number one on my high school
+varsity team, I know that being number one increased my reputation
+amongst the entire district, and winning more matches against higher
+rated opponents led to a boost in my rating and winning percentage
+overall. All of these findings in this project make sense and they were
+what I originally hypothesized.
+
+# References
+
+1.Wickham, Hadley, and Garrett Grolemund. R for Data Science. O'Reilly
+Media, 2017.
+
+2.Elo Rating System." Wikipedia, Wikimedia Foundation, 15 Nov. 2024,
+<https://en.wikipedia.org/wiki/Elo_rating_system>.
+
+3.Wickham, Hadley. "ggplot2: Elegant Graphics for Data Analysis."
+ggplot2 Documentation, 2021, <https://ggplot2.tidyverse.org/>.
+
+4.RStudio Team. "dplyr: A Grammar of Data Manipulation." dplyr
+Documentation, RStudio, <https://dplyr.tidyverse.org/>.
+
+5."Case_when Function." dplyr.tidyverse.org, 2021,
+<https://dplyr.tidyverse.org/reference/case_when.html>
+
+6."Who Is the Best Men's Tennis Player Ever? The GOAT Debate: Federer,
+Nadal, Djokovic." Sporting News, 15 Nov. 2024,
+www.sportingnews.com/us/tennis/news/who-best-mens-tennis-player-ever-goat-federer-nadal-djokovic/r3nitzqeukf4hvxx4jsjvja\
+
+7."GOAT List." Ultimate Tennis Statistics, 14 Nov. 2024,
+<https://ultimatetennisstatistics.com/goatList>
